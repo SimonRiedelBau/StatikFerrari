@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Statik-Assistent · Autohaus Ferrari München</title>
+<style>
+:root{
+  --bg:#101114;
+  --bg-alt:#16181d;
+  --surface:#1c1f26;
+  --surface-2:#22252d;
+  --border:#2b2f38;
+  --border-light:#383d48;
+  --text:#eceef1;
+  --text-dim:#9aa0ac;
+  --text-faint:#6b7180;
+  --red:#e10600;
+  --red-dim:#8a0700;
+  --red-glow:rgba(225,6,0,0.18);
+  --gold:#d9a441;
+  --blue:#4d8fd6;
+  --green:#4caf7d;
+  --mono:'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, var(--red-glow), transparent 60%),
+    linear-gradient(180deg, #0d0e11 0%, #101114 100%);
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ===== Header ===== */
+header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(16,17,20,0.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{
+  max-width:1180px; margin:0 auto;
+  padding:14px 20px;
+  display:flex; align-items:center; gap:14px;
+}
+.badge{
+  width:40px; height:40px; border-radius:8px;
+  background:linear-gradient(145deg, var(--red), #9a0500);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; font-size:13px;
+  color:#fff; flex-shrink:0;
+  box-shadow:0 4px 14px rgba(225,6,0,0.35);
+  letter-spacing:-0.5px;
+}
+.title-block{display:flex; flex-direction:column; gap:1px; min-width:0;}
+.title-block h1{
+  font-size:16px; font-weight:700; margin:0; letter-spacing:-0.2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.title-block .sub{
+  font-size:11.5px; color:var(--text-faint);
+  font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.header-meta{
+  margin-left:auto; text-align:right; flex-shrink:0;
+  font-family:var(--mono); font-size:10.5px; color:var(--text-faint);
+  display:none;
+}
+@media(min-width:640px){.header-meta{display:block;}}
+
+/* ===== Nav Tabs ===== */
+nav{
+  max-width:1180px; margin:0 auto;
+  padding:0 20px;
+  display:flex; gap:2px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  border-bottom:1px solid var(--border);
+  background:rgba(16,17,20,0.92);
+}
+nav::-webkit-scrollbar{display:none;}
+.tab{
+  flex-shrink:0;
+  padding:11px 14px;
+  font-size:13px; font-weight:600;
+  color:var(--text-dim);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;
+  transition:color .15s, border-color .15s;
+  display:flex; align-items:center; gap:6px;
+}
+.tab .num{
+  font-family:var(--mono); font-size:10px; color:var(--text-faint);
+  background:var(--surface); padding:1px 5px; border-radius:4px;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:#fff; border-bottom-color:var(--red);}
+.tab.active .num{background:var(--red-dim); color:#ffb3ae;}
+
+/* ===== Main ===== */
+main{max-width:1180px; margin:0 auto; padding:24px 20px 80px;}
+.view{display:none; animation:fade .25s ease;}
+.view.active{display:block;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+.section-head{margin-bottom:20px;}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; letter-spacing:1.5px;
+  color:var(--red); text-transform:uppercase; font-weight:700;
+  margin-bottom:6px;
+}
+.section-head h2{font-size:22px; margin:0 0 6px; letter-spacing:-0.3px;}
+.section-head p{color:var(--text-dim); font-size:13.5px; max-width:640px; margin:0; line-height:1.55;}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px 20px;
+  margin-bottom:14px;
+}
+.card h3{
+  font-size:14.5px; margin:0 0 12px;
+  display:flex; align-items:center; gap:8px;
+  color:#fff;
+}
+.card h3 .chip{
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  background:var(--surface-2); border:1px solid var(--border-light);
+  padding:2px 7px; border-radius:5px; color:var(--gold);
+}
+.card p{font-size:13.5px; line-height:1.6; color:var(--text-dim); margin:0 0 8px;}
+.card p:last-child{margin-bottom:0;}
+
+.grid2{display:grid; grid-template-columns:1fr; gap:14px;}
+@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr;}}
+.grid3{display:grid; grid-template-columns:1fr; gap:14px;}
+@media(min-width:760px){.grid3{grid-template-columns:1fr 1fr 1fr;}}
+
+.kv{display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px dashed var(--border);font-size:13px;}
+.kv:last-child{border-bottom:none;}
+.kv .k{color:var(--text-dim);}
+.kv .v{font-family:var(--mono); color:#fff; text-align:right; font-weight:600;}
+
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{
+  text-align:left; font-family:var(--mono); font-size:10.5px;
+  text-transform:uppercase; letter-spacing:0.5px; color:var(--text-faint);
+  padding:8px 10px; border-bottom:1px solid var(--border-light);
+  white-space:nowrap;
+}
+td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td.num, .tnum{font-family:var(--mono); color:var(--gold); white-space:nowrap;}
+.table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px;}
+.table-wrap table{margin:0;}
+.table-wrap thead{background:var(--surface-2);}
+
+.tag{
+  display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700;
+  padding:2px 8px; border-radius:5px; letter-spacing:0.3px;
+}
+.tag.red{background:rgba(225,6,0,0.15); color:#ff5c53; border:1px solid rgba(225,6,0,0.3);}
+.tag.gold{background:rgba(217,164,65,0.15); color:var(--gold); border:1px solid rgba(217,164,65,0.3);}
+.tag.blue{background:rgba(77,143,214,0.15); color:#7cb3ec; border:1px solid rgba(77,143,214,0.3);}
+.tag.green{background:rgba(76,175,125,0.15); color:#6fd19c; border:1px solid rgba(76,175,125,0.3);}
+.tag.gray{background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border-light);}
+
+.note{
+  background:linear-gradient(135deg, rgba(217,164,65,0.08), rgba(217,164,65,0.03));
+  border:1px solid rgba(217,164,65,0.25);
+  border-left:3px solid var(--gold);
+  border-radius:8px; padding:12px 14px; font-size:13px; color:#e8d9b8;
+  line-height:1.55; margin:12px 0;
+}
+.note.crit{
+  background:linear-gradient(135deg, rgba(225,6,0,0.1), rgba(225,6,0,0.03));
+  border-color:rgba(225,6,0,0.3); border-left-color:var(--red); color:#ffcfcb;
+}
+.note b{color:#fff;}
+
+.hero{
+  border:1px solid var(--border); border-radius:14px;
+  background:linear-gradient(160deg, var(--surface) 0%, var(--bg-alt) 100%);
+  padding:26px 24px; margin-bottom:22px; position:relative; overflow:hidden;
+}
+.hero::after{
+  content:""; position:absolute; top:-40%; right:-10%; width:340px; height:340px;
+  background:radial-gradient(circle, var(--red-glow), transparent 70%);
+  pointer-events:none;
+}
+.hero h2{font-size:24px; margin:0 0 8px; letter-spacing:-0.4px; position:relative;}
+.hero p{color:var(--text-dim); font-size:14px; max-width:600px; line-height:1.6; position:relative; margin:0;}
+.hero-stats{display:flex; gap:22px; margin-top:18px; flex-wrap:wrap; position:relative;}
+.hero-stat .n{font-family:var(--mono); font-size:22px; font-weight:700; color:#fff;}
+.hero-stat .l{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;}
+
+/* ===== Position search ===== */
+.search-bar{
+  display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;
+}
+.search-bar input[type=text]{
+  flex:1; min-width:200px;
+  background:var(--surface); border:1px solid var(--border-light);
+  border-radius:9px; padding:11px 14px; color:var(--text); font-size:14px;
+  font-family:var(--sans);
+}
+.search-bar input[type=text]:focus{outline:none; border-color:var(--red);}
+.chip-filter{
+  display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+}
+.chip-btn{
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  padding:7px 11px; border-radius:8px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--border-light); color:var(--text-dim);
+  transition:all .12s;
+}
+.chip-btn:hover{border-color:var(--text-faint); color:var(--text);}
+.chip-btn.active{background:var(--red); border-color:var(--red); color:#fff;}
+
+.pos-list{border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+.pos-row{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px; border-bottom:1px solid var(--border);
+  font-size:13px; cursor:default;
+}
+.pos-row:last-child{border-bottom:none;}
+.pos-row:nth-child(even){background:rgba(255,255,255,0.015);}
+.pos-row .lvl-badge{
+  font-family:var(--mono); font-size:9px; color:var(--text-faint);
+  width:16px; text-align:center; flex-shrink:0;
+}
+.pos-row .pch{
+  font-family:var(--mono); font-size:10px; font-weight:700; color:var(--gold);
+  background:var(--surface-2); border:1px solid var(--border-light);
+  padding:2px 6px; border-radius:5px; flex-shrink:0; min-width:40px; text-align:center;
+}
+.pos-row .ptitle{flex:1; min-width:0; color:var(--text);}
+.pos-row .ptitle.deep{color:var(--text-dim); font-size:12.5px;}
+.pos-row .ppage{
+  font-family:var(--mono); font-size:12px; color:var(--text-faint); flex-shrink:0;
+}
+.result-count{font-size:12px; color:var(--text-faint); margin-bottom:10px; font-family:var(--mono);}
+
+footer{
+  max-width:1180px; margin:0 auto; padding:30px 20px 50px;
+  color:var(--text-faint); font-size:11.5px; line-height:1.7;
+  border-top:1px solid var(--border); margin-top:30px;
+}
+footer a{color:var(--text-faint);}
+
+::selection{background:var(--red-dim); color:#fff;}
+
+@media(max-width:640px){
+  .header-inner{padding:12px 14px;}
+  main{padding:18px 14px 60px;}
+  .hero{padding:20px 16px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="badge">SB</div>
+    <div class="title-block">
+      <h1>Statik-Assistent · Autohaus Ferrari</h1>
+      <div class="sub">2024_0805 · Moosacher Str. 40, München · Rohbau-Referenz</div>
+    </div>
+    <div class="header-meta">Ametsbichler+Lehr · Mai 2026<br>2130 Seiten indiziert</div>
+  </div>
+  <nav id="tabs"></nav>
+</header>
+
+<main id="main"></main>
+
+<footer>
+  Referenztool auf Basis der statischen Berechnung „Neubau Autohaus Ferrari München" (Ametsbichler+Lehr Ingenieurgesellschaft mbH, Stand Mai 2026, 2130 Seiten). Ersetzt nicht das Originaldokument — Seitenzahlen verweisen auf die Original-PDF-Seiten der Statik. Im Zweifel gilt immer die Originalstatik / Rücksprache mit der Tragwerksplanung. Erstellt für die interne Nutzung als Baustellenreferenz.
+</footer>
+
+<script id="toc-data" type="application/json">
+[{"lvl": 1, "title": "Vorbemerkungen", "page": 3, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "1 Kapitelübersicht", "page": 3, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "2 Baubeschreibung", "page": 4, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 3, "title": "2.1 Massivbau 1. Untergeschoss", "page": 9, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 3, "title": "2.2 Gründung UG1", "page": 9, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 3, "title": "2.3 Beschichtungskonzept Tiefgarage", "page": 9, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "3 Gebäudeklasse nach BayBO", "page": 10, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "4 Baustoffe", "page": 10, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "5 Unterlagen zur Information", "page": 10, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "6 Baugrundverhältnisse", "page": 11, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "7 Normen und Regelwerke", "page": 13, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 2, "title": "8 Software", "page": 13, "chapter": "A", "chapterName": "Vorbemerkungen"}, {"lvl": 1, "title": "1  Decke über 2.OG (optionales Stahlbaudach)", "page": 16, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Ständige Einwirkungen", "page": 16, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Veränderliche Einwirkungen", "page": 16, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Übersicht Lastermittlung", "page": 17, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-04", "page": 18, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-05", "page": 21, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-06", "page": 24, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-07", "page": 27, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-08", "page": 30, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Pos. D-09", "page": 33, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "2  Decke über 2.OG (Stahlbetonkern)", "page": 36, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "3  Decke über 1. OG", "page": 37, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Ständige Einwirkungen", "page": 37, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Veränderliche Einwirkungen", "page": 37, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "4  Decke über ZG und EG", "page": 38, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "5 Zwischendecke über EG (Teilelager)", "page": 39, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "6  Decke über 1.UG", "page": 40, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.1 Büronutzung, Verkaufsflächen", "page": 40, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.2 Werkstatt im EG (s. markierte Bereiche im Positionsplan UG)", "page": 40, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.3 Teilelager im EG", "page": 41, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.4 Nicht überbaute Hofdecke", "page": 42, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.5 Decke über Rampe (überschüttet)", "page": 45, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "6.6 Decke über Rampe (reduzierter Aufbau im Bereich Einfahrt Service-Annahme)", "page": 45, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "7  Bodenplatten im UG", "page": 46, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Ständige Einwirkungen", "page": 46, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Veränderliche Einwirkungen", "page": 46, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "8  Lasten aus PKW-Aufzug", "page": 47, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "8.1  Lasten Schachtdecke", "page": 47, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "8.2 Lasten Bodenplatte", "page": 48, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "9  Trafolasten Decke über UG", "page": 49, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "10  Treppen / Treppenpodeste", "page": 51, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Ständige Einwirkungen", "page": 51, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "Veränderliche Einwirkungen", "page": 51, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "11  Fassade", "page": 51, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "12  Schneelasten", "page": 51, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "13  Windlasten", "page": 52, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "13.1  Winddruck für Flachdächer", "page": 52, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "13.2  Wind in Querrichtung", "page": 54, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 2, "title": "13.3  Wind in Längsrichtung", "page": 57, "chapter": "B", "chapterName": "Lastannahmen"}, {"lvl": 1, "title": "Nacheis Feuerwiderstandsdauer", "page": 61, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "1 Stb.-Stützen R90", "page": 62, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "2 Stb.-Decken R90", "page": 63, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "2.1  alle Stahlbetondecken:", "page": 63, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "2.2  alle Treppenzwischenpodeste:", "page": 64, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "3 Stb.-Wände R90", "page": 65, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "4 Stb.-Unterzüge R90", "page": 66, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "4.1  Brüstungen  mit bmin = 150 mm:", "page": 66, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "4.2  Unterzüge mit bmin =  250 mm oder bmin =  200 mm:", "page": 66, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "5 Stb.-Treppen R90", "page": 68, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "5.1  Treppenläufe, unverputzt, 1-achsig gespannt:", "page": 68, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 2, "title": "6 Stb.-Konsolen R90", "page": 69, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "6.1 Abgesetztes Treppenauflager", "page": 69, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 3, "title": "6.2 Linienkonsolen Treppenauflager", "page": 70, "chapter": "C", "chapterName": "Nachweis Feuerwiderstandsdauer"}, {"lvl": 1, "title": "Vorbemerkung", "page": 74, "chapter": "D", "chapterName": "Nachweis Gebäudeaussteifung"}, {"lvl": 2, "title": "Berechnung Geomodell", "page": 75, "chapter": "D", "chapterName": "Nachweis Gebäudeaussteifung"}, {"lvl": 1, "title": "Vorbemerkung", "page": 142, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Lastannahmen", "page": 143, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "ständige Lasten", "page": 143, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Treppenlauf", "page": 143, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Treppenpodest", "page": 143, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "veränderliche Lasten", "page": 143, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Übersicht Positionierung TRH", "page": 144, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Bemessung Treppenhaus", "page": 146, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-01", "page": 146, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager oben)", "page": 148, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Auflagerung unten direkt auf Bodenplatte", "page": 150, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Nachweis Schallentkopplung", "page": 151, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-02", "page": 152, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager oben)", "page": 154, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager unten)", "page": 157, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-03", "page": 160, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-04", "page": 161, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. TP-01", "page": 162, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Belastung", "page": 162, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Bemessung", "page": 163, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. TP-02", "page": 164, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Belastung", "page": 164, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Bemessung", "page": 165, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Rückbiegeanschlüsse", "page": 166, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Übersicht Positionierung Foyer", "page": 169, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Bemessung Foyer", "page": 170, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-05", "page": 170, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Bemessung", "page": 171, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail(Abgesetztes Treppenauflager oben)", "page": 174, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager unten)", "page": 177, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Streckenkonsole an Unterzug", "page": 180, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Nachweis Schallentkopplung", "page": 183, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 2, "title": "Pos. T-06", "page": 184, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager oben)", "page": 186, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Detail (Abgesetztes Treppenauflager unten)", "page": 189, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Nachweis der Stb.-Konsole", "page": 192, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 3, "title": "Nachweis Lagesicherheit", "page": 195, "chapter": "E", "chapterName": "Treppen und Treppenpodeste"}, {"lvl": 1, "title": "Decke über dem 2. OG", "page": 199, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. E2-01", "page": 199, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Gewählte Bewehrung", "page": 199, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung", "page": 200, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Decke über dem 1.OG", "page": 226, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. E1-01", "page": 226, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. E1-02", "page": 226, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Vorbemerkungen und Belastung", "page": 226, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung", "page": 227, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Anlagen in A2", "page": 254, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Decke über dem Zwischengeschoss", "page": 284, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. ZG-01", "page": 284, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. ZG-02", "page": 284, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. ZG-03", "page": 284, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Vorbemerkungen und Belastung", "page": 284, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung", "page": 285, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Anlagen in A2", "page": 315, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Decke über dem Erdgeschoss", "page": 343, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. E0-01", "page": 343, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Belastung", "page": 343, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung", "page": 344, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Anlagen in A2", "page": 370, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Decke über dem 1.UG", "page": 396, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. U1-01", "page": 396, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "NW Rissbreitenbegrenzung", "page": 397, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. U1-02", "page": 399, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "NW Rissbreitenbegrenzung", "page": 400, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung U1-01 / U1-02", "page": 402, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Anlagen in A2", "page": 462, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung Schöck Dorne Achse 0", "page": 503, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Decke über Rampe", "page": 512, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Pos. R-01", "page": 512, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung", "page": 513, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Bemessung Schöck Isokörbe", "page": 530, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Durchstanznachweise", "page": 538, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Durchstanznachweise im OG1", "page": 538, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Durchstanznachweise im ZG", "page": 538, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Übersicht Durchstanzbereiche", "page": 538, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-ZG-01", "page": 540, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-ZG-02", "page": 543, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Durchstanznachweise im EG", "page": 546, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Übersicht Durchstanzbereiche", "page": 546, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-E0-01", "page": 547, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 2, "title": "Durchstanznachweise im UG1", "page": 550, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "Übersicht Durchstanzbereiche", "page": 550, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-01", "page": 552, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-02", "page": 555, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-03", "page": 558, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-04", "page": 561, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-05", "page": 564, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-06", "page": 567, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-07", "page": 570, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-08", "page": 573, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-09", "page": 576, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-10", "page": 579, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-11", "page": 582, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-12", "page": 585, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 3, "title": "DS-U1-13", "page": 588, "chapter": "F", "chapterName": "Decken und Durchstanznachweise"}, {"lvl": 1, "title": "Unterzüge im 2.OG", "page": 593, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. AT-01", "page": 593, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "Unterzüge im 1.OG", "page": 594, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. AT-02", "page": 594, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-50", "page": 595, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 596, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-51", "page": 603, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 604, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Torsion", "page": 616, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-52", "page": 620, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 621, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Torsion", "page": 631, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-53", "page": 635, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 636, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-54", "page": 643, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 644, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Verankerung am linken Endauflager (direkt)", "page": 652, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Verankerung am rechten Endauflager (direkt)", "page": 654, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-55", "page": 659, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 660, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. O1-56", "page": 667, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 668, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Torsion", "page": 675, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "Unterzüge im ZG", "page": 679, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. ZG-50", "page": 679, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 680, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Zentrierung durch Decke", "page": 687, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. ZG-51", "page": 689, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 690, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. ZG-52", "page": 697, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 698, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Torsion", "page": 707, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. ZG-53", "page": 711, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 712, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. ZG-54", "page": 719, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 720, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "Unterzüge im EG", "page": 726, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. E0-50", "page": 726, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 727, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. E0-51", "page": 733, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 734, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. E0-52", "page": 741, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "Unterzüge im UG", "page": 742, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. R-50", "page": 742, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. R-51", "page": 743, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-50", "page": 744, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 745, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-51", "page": 751, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 752, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-52", "page": 758, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-53", "page": 759, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-54", "page": 760, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-55", "page": 761, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 762, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Pos. U1-56", "page": 769, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung", "page": 770, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Verankerung am linken Auflager (direkt)", "page": 778, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Verankerung am rechten Auflager (direkt)", "page": 780, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung Zentrierung durch Decke", "page": 782, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "Konsolen", "page": 785, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-01", "page": 785, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 786, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-02", "page": 793, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 794, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-03", "page": 800, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 801, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Nachweis Hochhängebewehrung", "page": 809, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-04", "page": 811, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 812, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-05", "page": 821, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 822, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-06", "page": 831, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 832, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-07", "page": 841, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "KO-08", "page": 842, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Bemessung HSC", "page": 843, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 3, "title": "Nachweis Hochhängebewehrung", "page": 851, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 2, "title": "Bemessung Gleitlager", "page": 853, "chapter": "G.1", "chapterName": "Unterzüge und Konsolen"}, {"lvl": 1, "title": "FT-Unterzüge im OG", "page": 856, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-101", "page": 857, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 3, "title": "Bemessung", "page": 858, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-102", "page": 865, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 3, "title": "Bemessung", "page": 866, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-103", "page": 876, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 3, "title": "Bemessung", "page": 877, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-104", "page": 884, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 3, "title": "Bemessung", "page": 885, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 1, "title": "Nachweise Auflager im OG", "page": 894, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-101/102", "page": 894, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. O1-103/104", "page": 897, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 1, "title": "FT-Unterzüge im ZG", "page": 900, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 2, "title": "Pos. ZG-101", "page": 900, "chapter": "G.2", "chapterName": "FT-Unterzüge"}, {"lvl": 1, "title": "FT-Spannbeton-Unterzüge (Werkstatt)", "page": 902, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 2, "title": "Belastung", "page": 903, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 2, "title": "Pos. ZG-V01", "page": 908, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 2, "title": "Pos. ZG-V02", "page": 944, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 2, "title": "Pos. ZG-V03", "page": 967, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 2, "title": "Nachweis Elastomerlager", "page": 982, "chapter": "G.3", "chapterName": "FT-Spannbeton-Unterzüge"}, {"lvl": 1, "title": "Kapitel H", "page": 983, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Vorbemerkungen", "page": 987, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Belastung der Wände und Wandscheiben", "page": 987, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Wände", "page": 987, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Türstürze", "page": 987, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Auflager Spannbetonbinder", "page": 988, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Nachweis Spaltzugkräfte Binderauflager", "page": 988, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Nachweis", "page": 990, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Wände Erdgeschoss bis 2. Obergeschoss", "page": 991, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-01", "page": 991, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 992, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-02", "page": 997, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 998, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-03", "page": 1004, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis im EG", "page": 1005, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis im OG", "page": 1010, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-04", "page": 1011, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1012, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-05", "page": 1016, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1017, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-11", "page": 1021, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1022, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-12", "page": 1028, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis Wand", "page": 1029, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druck- und Knicknachweis Stütze Achse A/9", "page": 1035, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-13", "page": 1041, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-14", "page": 1043, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-15", "page": 1045, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1046, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Innenwände im UG", "page": 1052, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-21", "page": 1052, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1053, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Rissbreitennachweis", "page": 1058, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-22", "page": 1060, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1061, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Rissbreitennachweis", "page": 1066, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-23", "page": 1068, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1069, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Rissbreitennachweis", "page": 1070, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-24", "page": 1072, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1073, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-25", "page": 1079, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1080, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. W-26", "page": 1081, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Außenwände im UG", "page": 1083, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. UG-AW-1", "page": 1083, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1084, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Statisches System", "page": 1085, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung gegen Erddruck", "page": 1086, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. UG-AW-2", "page": 1091, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1092, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Statisches System", "page": 1093, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung gegen Erddruck", "page": 1094, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. UG-AW-3", "page": 1099, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Druckspannungs- und Knicknachweis", "page": 1100, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Statisches System", "page": 1101, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung gegen Erddruck", "page": 1102, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. UG-AW-4", "page": 1108, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Plattenbemessung gegen Erddruck", "page": 1109, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Durchstanznachweis", "page": 1134, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 2, "title": "Wandscheiben", "page": 1135, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E2-WS-1", "page": 1135, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1136, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1137, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1137, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E1-WS-1", "page": 1138, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1139, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1140, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1140, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E1-WS-2", "page": 1141, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1142, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannung:", "page": 1143, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E1-WS-3", "page": 1144, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1145, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1146, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung", "page": 1147, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1147, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E1-WS-4", "page": 1148, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1149, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannung:", "page": 1150, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Aufager b", "page": 1151, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1151, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. ZG-WS-1", "page": 1152, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1159, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1159, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. ZG-WS-2", "page": 1160, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1161, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1162, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung", "page": 1163, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1163, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. ZG-WS-3", "page": 1164, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "FEM-Bemessung", "page": 1165, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1180, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. ZG-WS-4", "page": 1181, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1182, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1183, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1183, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. ZG-WS-5", "page": 1184, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1185, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1186, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1186, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-1", "page": 1187, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Belastung", "page": 1188, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1189, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "a) FEM-Bemessung (Auflager mit Federsteifigkeiten)", "page": 1190, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "b) FEM-Bemessung (Unendlich steife Auflager)", "page": 1247, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1260, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager a", "page": 1262, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager b+c", "page": 1263, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1263, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-2", "page": 1264, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Belastung", "page": 1265, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1266, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "a) FEM-Bemessung (Auflager mit Federsteifigkeiten)", "page": 1267, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "b) FEM-Bemessung (Unendlich steife Auflager)", "page": 1319, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1331, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager b+c", "page": 1333, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1333, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-3", "page": 1334, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Belastung", "page": 1335, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1336, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "a) FEM-Bemessung (Auflager mit Federsteifigkeiten)", "page": 1337, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "b) FEM-Bemessung (Unendlich steife Auflager)", "page": 1381, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1393, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager b+c", "page": 1395, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1395, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-4", "page": 1396, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Belastung", "page": 1397, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1398, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "a) FEM-Bemessung (Auflager mit Federsteifigkeiten)", "page": 1399, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "b) FEM-Bemessung (Unendlich steife Auflager)", "page": 1437, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1448, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager d", "page": 1450, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager e", "page": 1451, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager f", "page": 1452, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1452, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-5", "page": 1453, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1454, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1455, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung", "page": 1456, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1456, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-6", "page": 1457, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Biegebemessung", "page": 1458, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1459, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung", "page": 1460, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1460, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-7", "page": 1461, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1462, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "FEM-Bemessung", "page": 1463, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1485, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung", "page": 1486, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1486, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-8", "page": 1487, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1488, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "FEM-Bemessung", "page": 1489, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1512, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager a", "page": 1513, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1513, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 3, "title": "Pos. E0-WS-9", "page": 1514, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Belastung", "page": 1515, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Bewehrungsskizze", "page": 1516, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "a) FEM-Bemessung (Auflager mit Federsteifigkeiten)", "page": 1517, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "b) FEM-Bemessung (Unendlich steife Auflager)", "page": 1556, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Begrenzung der Hauptdruckspannungen", "page": 1569, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager a", "page": 1571, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Indirekte Lagerung Auflager b", "page": 1572, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 4, "title": "Mindestnetzbewehrung je Seite", "page": 1572, "chapter": "H", "chapterName": "Wände und Wandscheiben"}, {"lvl": 1, "title": "Allgemeines", "page": 1577, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 1, "title": "Stützen im OG1", "page": 1578, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. O1-S-1", "page": 1579, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1579, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1579, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. O1-S-2", "page": 1586, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1586, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1586, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1587, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. O1-S-3", "page": 1593, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1593, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1593, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1594, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. O1-S-04", "page": 1600, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1600, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1600, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1602, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 1, "title": "Stützen im EG", "page": 1608, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-1", "page": 1609, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1609, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1609, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1611, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-2", "page": 1619, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1619, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen:", "page": 1619, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1620, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-3", "page": 1627, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1627, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1627, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1628, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-4", "page": 1635, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1635, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1635, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1636, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-5", "page": 1643, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1643, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1643, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1644, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-6", "page": 1650, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1650, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1650, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1651, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-7", "page": 1658, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1658, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1658, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1660, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-8", "page": 1666, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1666, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen:", "page": 1666, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1667, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-9", "page": 1673, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1673, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1673, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1675, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. E0-S-10", "page": 1681, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung", "page": 1681, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1681, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1683, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 1, "title": "Stützen im UG", "page": 1689, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-1", "page": 1692, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1692, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1692, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1694, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-2", "page": 1702, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1702, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1702, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1704, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-3", "page": 1711, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1711, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1711, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1713, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-4", "page": 1720, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1720, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1720, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1722, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-5", "page": 1729, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1729, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1729, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1731, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-6", "page": 1738, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1738, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1738, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1740, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-7", "page": 1747, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1747, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1747, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1749, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-8", "page": 1756, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1756, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1756, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1758, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-9", "page": 1765, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1765, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1765, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1767, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 2, "title": "Pos. U1-S-10", "page": 1775, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "gewählte Bewehrung:", "page": 1775, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Nachweis Betondruckspannungen", "page": 1775, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 3, "title": "Bemessung", "page": 1777, "chapter": "I", "chapterName": "Stützen"}, {"lvl": 1, "title": "Vorbemerkungen", "page": 1780, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Grundlegende Festlegung für die Bemessung der Fundamente", "page": 1780, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Abminderung der Verkehrslasten", "page": 1781, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Horizontallasten aus Erddruck", "page": 1781, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bereich FU-11 - Achse -3", "page": 1782, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bereich FU-12 - Achse 9", "page": 1787, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bereich FU-11 bzw. FU-13 - Achse A", "page": 1792, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bereich FU-11 bzw. FU-13 - Achse G", "page": 1792, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bereich FU-14", "page": 1801, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Übersicht Fundamenttypen", "page": 1804, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Streifenfundamente", "page": 1805, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-11", "page": 1805, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1806, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung Achse -3", "page": 1814, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-12", "page": 1822, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1823, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung", "page": 1832, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-13", "page": 1840, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1841, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung Achse A", "page": 1849, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung Achse G", "page": 1857, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-14", "page": 1867, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1868, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung", "page": 1876, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-15", "page": 1883, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1884, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-16", "page": 1892, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1893, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-17", "page": 1902, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Vertikalrichtung", "page": 1903, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung in Querrichtung", "page": 1910, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Einzelfundamente", "page": 1916, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-01", "page": 1916, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1917, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-02", "page": 1930, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1932, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-03", "page": 1945, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1948, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-04", "page": 1959, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1960, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-05", "page": 1969, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1970, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-06", "page": 1981, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1982, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-07", "page": 1994, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 1996, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-21", "page": 2006, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 2007, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-22", "page": 2016, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 2017, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-23", "page": 2024, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 2025, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-24", "page": 2033, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung", "page": 2035, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FU-LS", "page": 2044, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Zerrbalken", "page": 2045, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. ZB-01", "page": 2045, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung als Stütze", "page": 2046, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung als Balken", "page": 2050, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Frostschürzen und Schubknagge", "page": 2054, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. FS-01", "page": 2054, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. SK-01", "page": 2054, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Gründung Bodenplatten", "page": 2055, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 2, "title": "Pos. BP-01", "page": 2055, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "NW Rissbreitenbegrenzung h=110cm", "page": 2056, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Belastung aus Kran", "page": 2058, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "System und Ankerkräfte", "page": 2061, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Einleitung der Druckkraft", "page": 2062, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Einleitung der Zugkraft", "page": 2062, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Kippnachweis des Fundamentes Bauzustand", "page": 2063, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 3, "title": "Bemessung Bodenplatte Endzustand", "page": 2064, "chapter": "J", "chapterName": "Gründung"}, {"lvl": 1, "title": "Winkelstützwände", "page": 2106, "chapter": "K", "chapterName": "Außenbauteile"}, {"lvl": 2, "title": "WSWA-01", "page": 2106, "chapter": "K", "chapterName": "Außenbauteile"}, {"lvl": 3, "title": "Nachweis Rissbreitenbegrenzung Bodenplatte", "page": 2107, "chapter": "K", "chapterName": "Außenbauteile"}, {"lvl": 3, "title": "Nachweis mit Erddruck", "page": 2109, "chapter": "K", "chapterName": "Außenbauteile"}]
+</script>
+
+<script>
+// ============================================================
+// Statik-Assistent Autohaus Ferrari — App Logic
+// ============================================================
+
+const TOC = JSON.parse(document.getElementById('toc-data').textContent);
+
+const CHAPTERS = [
+  {code:'A', name:'Vorbemerkungen', range:[1,13]},
+  {code:'B', name:'Lastannahmen', range:[14,60]},
+  {code:'C', name:'Feuerwiderstandsdauer', range:[61,73]},
+  {code:'D', name:'Gebäudeaussteifung', range:[74,141]},
+  {code:'E', name:'Treppen / Treppenpodeste', range:[142,198]},
+  {code:'F', name:'Decken / Durchstanznachweise', range:[199,592]},
+  {code:'G.1', name:'Unterzüge und Konsolen', range:[593,855]},
+  {code:'G.2', name:'FT-Unterzüge', range:[856,901]},
+  {code:'G.3', name:'FT-Spannbeton-Unterzüge', range:[902,982]},
+  {code:'H', name:'Wände und Wandscheiben', range:[983,1576]},
+  {code:'I', name:'Stützen', range:[1577,1779]},
+  {code:'J', name:'Gründung', range:[1780,2105]},
+  {code:'K', name:'Außenbauteile', range:[2106,2130]},
+];
+
+const TABS = [
+  {id:'uebersicht', label:'Übersicht', num:'A'},
+  {id:'baustoffe', label:'Baustoffe', num:'A.4'},
+  {id:'bauteile', label:'Bauteile', num:'—'},
+  {id:'lasten', label:'Lasten', num:'B'},
+  {id:'brandschutz', label:'Brandschutz', num:'C'},
+  {id:'gruendung', label:'Gründung', num:'J'},
+  {id:'positionen', label:'Positionen', num:'601'},
+  {id:'normen', label:'Normen', num:'A.7'},
+];
+
+// ---------- Nav build ----------
+const tabsEl = document.getElementById('tabs');
+TABS.forEach(t=>{
+  const el = document.createElement('div');
+  el.className = 'tab';
+  el.dataset.tab = t.id;
+  el.innerHTML = `${t.label} <span class="num">${t.num}</span>`;
+  el.onclick = () => showTab(t.id);
+  tabsEl.appendChild(el);
+});
+
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active', e.dataset.tab===id));
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('active', e.id==='view-'+id));
+  window.scrollTo({top:0, behavior:'instant'});
+  if(id==='positionen'){ renderPosList(); }
+}
+
+// ---------- Main render ----------
+const main = document.getElementById('main');
+TABS.forEach(t=>{
+  const div = document.createElement('div');
+  div.className = 'view';
+  div.id = 'view-'+t.id;
+  main.appendChild(div);
+});
+
+// ============================================================
+// VIEW: ÜBERSICHT
+// ============================================================
+document.getElementById('view-uebersicht').innerHTML = `
+<div class="hero">
+  <div class="eyebrow">Bauvorhaben 2024_0805</div>
+  <h2>Neubau Autohaus Ferrari München</h2>
+  <p>Moosacher Straße 40, 80809 München — Stahlbeton-Massivbau mit Tiefgarage, 3 Vollgeschossen und optionaler Stahlbau-Aufstockung im 2.OG. Generalunternehmer: Riedel Bau AG. Tragwerksplanung: Ametsbichler+Lehr Ingenieurgesellschaft mbH.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="n">2.130</div><div class="l">Seiten Statik</div></div>
+    <div class="hero-stat"><div class="n">53 × 32 m</div><div class="l">Grundfläche</div></div>
+    <div class="hero-stat"><div class="n">GK 5</div><div class="l">Gebäudeklasse (BayBO)</div></div>
+    <div class="hero-stat"><div class="n">R90</div><div class="l">Brandwiderstand, alle Geschosse</div></div>
+  </div>
+</div>
+
+<div class="section-head">
+  <div class="eyebrow">Kapitel A · Vorbemerkungen</div>
+  <h2>Projektbeteiligte</h2>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h3>Bauherr &amp; Planung</h3>
+    <div class="kv"><span class="k">Bauherr</span><span class="v" style="font-family:var(--sans); font-weight:500;">ADIMO Immobilien Erschließungs- &amp; Administrations GmbH</span></div>
+    <div class="kv"><span class="k">Entwurfsverfasser</span><span class="v" style="font-family:var(--sans); font-weight:500;">Möckel Architekten GmbH</span></div>
+    <div class="kv"><span class="k">Architekt LP5</span><span class="v" style="font-family:var(--sans); font-weight:500;">Vorstadt Architekten</span></div>
+    <div class="kv"><span class="k">Generalunternehmer</span><span class="v" style="font-family:var(--sans); font-weight:500;">Riedel Bau AG, Schweinfurt</span></div>
+    <div class="kv"><span class="k">Tragwerksplanung</span><span class="v" style="font-family:var(--sans); font-weight:500;">Ametsbichler+Lehr, München</span></div>
+  </div>
+  <div class="card">
+    <h3>Eckdaten Statik</h3>
+    <div class="kv"><span class="k">Stand</span><span class="v">Mai 2026</span></div>
+    <div class="kv"><span class="k">Bearbeiter</span><span class="v" style="font-family:var(--sans);">i.A. Maximilian Maid</span></div>
+    <div class="kv"><span class="k">Software</span><span class="v" style="font-family:var(--sans);">FriLo, BauText, Halfen HDB/HSC</span></div>
+    <div class="kv"><span class="k">Bemessungsnorm</span><span class="v">DIN EN 1990–1997</span></div>
+  </div>
+</div>
+
+<div class="section-head" style="margin-top:26px;">
+  <div class="eyebrow">Baubeschreibung</div>
+  <h2>Tragwerkskonzept</h2>
+</div>
+<div class="card">
+  <p>Gebäude mit drei Obergeschossen und unterirdischer Tiefgarage (1.UG). OGs: Ausstellungs-, Verkaufs- und Büroflächen. EG: Service-/Werkstattflächen, Büro, Empfang. Treppenhauskern sowie Personen- und Fahrzeugaufzug. Fugenlose Massivbauweise in Stahlbeton.</p>
+  <p><b style="color:#fff;">Optionale Aufstockung 2.OG:</b> statisch als Stahlbau (Stahlträger auf Stahlbetonstützen) berücksichtigt, aber nicht baulich umgesetzt — daher <span class="tag gold">GK 5</span> und einheitlich R90 in allen Geschossen, um spätere Ertüchtigung zu vermeiden. Aufzugskern in Massivbau bis 2.OG durchgeführt.</p>
+  <p><b style="color:#fff;">Deckensystem:</b> Große Bereiche der Decke über 1.OG und über dem Zwischengeschoss sind stützenfrei — Lastabtrag über vorgespannte Fertigteilbinder (auf Innen-/Außenwänden bzw. Konsolen), darauf schlanke Filigrandecken (16 cm, Spannweite ca. 4,20 m). Binderabmessungen ca. 60×80 cm, im Bereich der stützenfreien Werkstatt (Spannweite bis 21,50 m) ca. 60×180 cm.</p>
+  <p><b style="color:#fff;">Aussteifung:</b> über vorhandene Stahlbetonwände und -decken.</p>
+  <p><b style="color:#fff;">Gründung:</b> Grundwasser nur im Bereich der Aufzugsunterfahrt relevant → dort tragende Bodenplatte in WU-Konstruktion. Übrige Bereiche: Einzel- und Streifenfundamente, Pflasterbelag in der Tiefgarage.</p>
+</div>
+
+<div class="grid3">
+  <div class="card">
+    <h3>1. Untergeschoss (Massivbau)</h3>
+    <div class="kv"><span class="k">Decke Büro</span><span class="v">26 cm</span></div>
+    <div class="kv"><span class="k">Decke TG unter Produktion</span><span class="v">30 cm</span></div>
+    <div class="kv"><span class="k">Decke TG unter Lager</span><span class="v">40 cm</span></div>
+    <div class="kv"><span class="k">Außenwände</span><span class="v">25 / 30 / 35 cm</span></div>
+    <div class="kv"><span class="k">Rampe</span><span class="v">Polymerfaserbeton auf Kies</span></div>
+  </div>
+  <div class="card">
+    <h3>Gründung UG1</h3>
+    <div class="kv"><span class="k">Regelfall</span><span class="v" style="font-family:var(--sans);">Einzel-/Streifenfund.</span></div>
+    <div class="kv"><span class="k">Aufzugskerne</span><span class="v" style="font-family:var(--sans);">Bodenplatte (WU)</span></div>
+    <div class="kv"><span class="k">TG-Untergrund</span><span class="v" style="font-family:var(--sans);">Pflasterbelag</span></div>
+    <div class="kv"><span class="k">Technik/Lager</span><span class="v" style="font-family:var(--sans);">n. tragende Bodenplatte</span></div>
+  </div>
+  <div class="card">
+    <h3>Beschichtung Tiefgarage</h3>
+    <div class="kv"><span class="k">Fahrbahnbelag</span><span class="v" style="font-family:var(--sans);">Pflasterbelag</span></div>
+    <div class="kv"><span class="k">Chloridschutz</span><span class="v" style="font-family:var(--sans);">bituminös</span></div>
+    <div class="kv"><span class="k">Hochzug aufgehend</span><span class="v">50 cm</span></div>
+  </div>
+</div>
+
+<div class="note">
+  <b>Kapitelübersicht Original-Statik:</b> A Vorbemerkungen · B Lastannahmen · C Feuerwiderstandsdauer · D Gebäudeaussteifung · E Treppen/Podeste · F Decken/Durchstanznachweise · G.1 Unterzüge/Konsolen · G.2 FT-Unterzüge · G.3 FT-Spannbeton-Unterzüge · H Wände/Wandscheiben · I Stützen · J Gründung · K Außenbauteile.
+</div>
+`;
+
+// ============================================================
+// VIEW: BAUSTOFFE
+// ============================================================
+document.getElementById('view-baustoffe').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Kapitel A.4</div>
+  <h2>Baustoffe</h2>
+  <p>Grundsätzliche Materialfestlegung laut Vorbemerkungen. Die konkrete Betongüte, Expositionsklasse und Betondeckung je Bauteil steht immer auf der jeweiligen Positionskarte in der Statik — Richtwerte aus stichprobenartig geprüften Positionen unten.</p>
+</div>
+
+<div class="grid3">
+  <div class="card">
+    <h3>Stahlbeton</h3>
+    <div class="kv"><span class="k">Bandbreite</span><span class="v">C25/30 – C50/60</span></div>
+    <div class="kv"><span class="k">Fundamente (Bsp. FU-11)</span><span class="v">C30/37</span></div>
+    <div class="kv"><span class="k">Stützen (Bsp. O1-S-1)</span><span class="v">C30/37</span></div>
+    <div class="kv"><span class="k">Binderauflager (Bsp.)</span><span class="v">C35/45</span></div>
+  </div>
+  <div class="card">
+    <h3>Betonstahl</h3>
+    <div class="kv"><span class="k">Betonstahl</span><span class="v">B500A, B500B</span></div>
+    <div class="kv"><span class="k">fyk</span><span class="v">500 N/mm²</span></div>
+    <div class="kv"><span class="k">γS</span><span class="v">1,15</span></div>
+  </div>
+  <div class="card">
+    <h3>Baustahl</h3>
+    <div class="kv"><span class="k">Güten</span><span class="v">S235, S355</span></div>
+    <div class="kv"><span class="k">Einsatz</span><span class="v" style="font-family:var(--sans);">Stahlträger optionales Dach 2.OG (IPE 300 u.a.)</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Verantwortung Montagezustand</h3>
+  <p>Für die Güte der einzubauenden Materialien und die Standsicherheit im Montagezustand haften die ausführenden Unternehmen. Sämtliche Baustoffe ohne DIN-Normung benötigen eine bauaufsichtliche Zulassung oder eine Zulassung im Einzelfall.</p>
+</div>
+
+<div class="card">
+  <h3>Expositionsklassen — typische Zuordnung (Beispiele aus der Statik)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Bauteil</th><th>Exposition</th><th>cnom</th><th>Bemerkung</th></tr></thead>
+      <tbody>
+        <tr><td>Innenbauteile, trocken</td><td class="num">XC1</td><td class="num">25–30 mm</td><td>Decken, Innenwände, Stützen im Trockenbereich</td></tr>
+        <tr><td>Fundamente unten (erdberührt)</td><td class="num">XC2</td><td class="num">35 mm</td><td>Bsp. FU-11: unten XC2</td></tr>
+        <tr><td>Fundamente oben (bewittert vor Verfüllung)</td><td class="num">XC3</td><td class="num">35 mm</td><td>Bsp. FU-11: oben XC3</td></tr>
+        <tr><td>Stützen (innen)</td><td class="num">XC1</td><td class="num">30 mm</td><td>Bsp. O1-S-1</td></tr>
+        <tr><td>Tiefgarage / TG-Bauteile</td><td class="num">–</td><td class="num">–</td><td>Zusätzlicher bituminöser Chloridschutz statt/zusätzlich zu XD-Nachweis</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">Verbindlich ist immer die Angabe auf der jeweiligen Positionskarte in Kapitel F–K der Statik. Diese Tabelle dient nur als Orientierung für typische Fälle.</div>
+</div>
+`;
+
+// ============================================================
+// VIEW: BAUTEILE (Querschnitte / Regelmaße)
+// ============================================================
+document.getElementById('view-bauteile').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Baubeschreibung &amp; Positionskarten</div>
+  <h2>Regelquerschnitte im Überblick</h2>
+  <p>Zusammengestellte Richtwerte aus Baubeschreibung (Kap. A) und stichprobenartig geprüften Positionen. Für exakte Maße/Bewehrung immer die einzelne Pos.-Karte im Positionsindex nachschlagen.</p>
+</div>
+
+<div class="card">
+  <h3>Decken <span class="chip">Kap. F</span></h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Bereich</th><th>Dicke</th><th>Bemerkung</th></tr></thead>
+      <tbody>
+        <tr><td>Filigrandecke auf FT-Bindern</td><td class="num">16 cm</td><td>Spannweite ca. 4,20 m</td></tr>
+        <tr><td>Decke über Aufstockung (2.OG)</td><td class="num">24 cm</td><td>—</td></tr>
+        <tr><td>Regeldecken Obergeschosse</td><td class="num">30 cm</td><td>—</td></tr>
+        <tr><td>Decke 1.UG</td><td class="num">32 / 34 cm</td><td>je nach Bereich</td></tr>
+        <tr><td>Decke UG1 — Büro</td><td class="num">26 cm</td><td>—</td></tr>
+        <tr><td>Decke UG1 — TG unter Produktion</td><td class="num">30 cm</td><td>—</td></tr>
+        <tr><td>Decke UG1 — TG unter Lager</td><td class="num">40 cm</td><td>—</td></tr>
+        <tr><td>Nicht überbaute Hofdecke</td><td class="num">34 cm</td><td>+ ca. 65 cm Überschüttung</td></tr>
+        <tr><td>Decke über Rampe (reduziert)</td><td class="num">24 cm</td><td>Einfahrt Service-Annahme</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3>Wände <span class="chip">Kap. H</span></h3>
+    <div class="kv"><span class="k">Außenwände UG</span><span class="v">25 / 30 / 35 cm</span></div>
+    <div class="kv"><span class="k">Wandecken, Bewehrung</span><span class="v">4 Ø14</span></div>
+    <div class="kv"><span class="k">Wandenden, Bewehrung</span><span class="v">2 Ø14</span></div>
+    <div class="kv"><span class="k">Türlaibungen</span><span class="v">2 Ø14</span></div>
+    <div class="kv"><span class="k">Türstürze ≤1,50 m lichte W.</span><span class="v">3Ø12u / 2Ø12o, Bü.Ø8/15</span></div>
+    <div class="kv"><span class="k">Türstürze &gt;1,50–2,50 m</span><span class="v">3Ø14u / 2Ø14o, Bü.Ø8/15</span></div>
+    <div class="kv"><span class="k">Türstürze &gt;2,50 m</span><span class="v">4Ø20u / 2Ø16o, Bü.Ø10/15</span></div>
+  </div>
+  <div class="card">
+    <h3>FT-Spannbetonbinder <span class="chip">Kap. G.3</span></h3>
+    <div class="kv"><span class="k">Regelquerschnitt</span><span class="v">ca. 60×80 cm</span></div>
+    <div class="kv"><span class="k">Werkstattbereich (Spw. bis 21,50 m)</span><span class="v">ca. 60×180 cm</span></div>
+    <div class="kv"><span class="k">Elastomerlager Beispiel</span><span class="v">240×340 mm</span></div>
+    <div class="kv"><span class="k">Spaltzugbewehrung Auflager</span><span class="v">5 Bü. Ø10/10, b=100cm</span></div>
+    <div class="note" style="margin-top:10px;">Unter allen Binderauflagern der Pos. ZG-V01/02/03 einbauen!</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Beispiel-Positionskarten (Aufbau erklärt)</h3>
+  <p>Jede Bauteilposition in Kapitel F–K folgt demselben Muster: Bauteiltyp + Abmessung, Betongüte, Expositionsklasse, cnom, gewählte Bewehrung, danach die rechnerischen Nachweise. Zwei Beispiele:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Position</th><th>Bauteil</th><th>Beton</th><th>Bewehrung</th><th>Seite</th></tr></thead>
+      <tbody>
+        <tr><td class="num">FU-11</td><td>Streifenfundament 80/50cm</td><td>C30/37</td><td>4Ø12 o/u, Bügel Ø10/20</td><td class="num">1805</td></tr>
+        <tr><td class="num">O1-S-1</td><td>Außenstütze 35×35cm</td><td>C30/37</td><td>8Ø20, Bügel Ø10/20</td><td class="num">1578</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;
+
+// ============================================================
+// VIEW: LASTEN
+// ============================================================
+document.getElementById('view-lasten').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Kapitel B · Lastannahmen</div>
+  <h2>Charakteristische Lasten je Bereich</h2>
+  <p>Ständige (gk) und veränderliche (pk) Einwirkungen aus Kapitel B, wie in der Statik für die Bemessung angesetzt.</p>
+</div>
+
+<div class="card">
+  <h3>Decken — ständige &amp; veränderliche Lasten</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Bereich</th><th>gk</th><th>pk (bemessen)</th><th>Bemerkung</th></tr></thead>
+      <tbody>
+        <tr><td>Decke 2.OG — Stahlbaudach (optional)</td><td class="num">3,00 kN/m²</td><td class="num">1,00 / sk=1,15</td><td>Begrünung, PV, Abdichtung; Wartungslast + Schnee</td></tr>
+        <tr><td>Decke 2.OG — Stahlbetonkern</td><td class="num">3,00 kN/m²</td><td class="num">1,00 / 7,50</td><td>+ 2× 40 kN Einzellast Aufzug-Abhängung</td></tr>
+        <tr><td>Decke 1.OG (opt. Aufstockung)</td><td class="num">4,00 kN/m²</td><td class="num">4,00 kN/m²</td><td>Kat. F1; Technikflächen 7,50 kN/m²</td></tr>
+        <tr><td>Decke ZG/EG — Regelbereich</td><td class="num">2,75 kN/m²</td><td class="num">5,00 kN/m²</td><td>einheitl. bemessen (deckt B1/F1/C3/T2 ab)</td></tr>
+        <tr><td>Decke ZG/EG — Dachterrassen</td><td class="num">4,00 kN/m²</td><td class="num">5,00 kN/m²</td><td>—</td></tr>
+        <tr><td>Decke 1.UG — Büro/Verkauf</td><td class="num">2,75 kN/m²</td><td class="num">5,00 kN/m²</td><td>Kat. B1 + Trennwandzuschlag</td></tr>
+        <tr><td>Decke 1.UG — Werkstatt EG</td><td class="num">5,00 kN/m²</td><td class="num">5,00 kN/m²</td><td>inkl. 18cm Stb.-Aufkantung</td></tr>
+        <tr><td>Decke 1.UG — Teilelager EG</td><td class="num">2,75 kN/m²</td><td class="num">7,50 kN/m²</td><td>Kat. E2.1</td></tr>
+        <tr><td>Nicht überbaute Hofdecke</td><td class="num">18,30 kN/m²</td><td class="num">16,39 kN/m²</td><td>~65cm Überschüttung + SLW30-Anlieferverkehr; rEd=49,29 kN/m²</td></tr>
+        <tr><td>Decke über Rampe (überschüttet)</td><td class="num">9,80 kN/m²</td><td class="num">16,40 kN/m²</td><td>analog Hofdecke</td></tr>
+        <tr><td>Decke über Rampe (reduziert)</td><td class="num">10,20 kN/m²</td><td class="num">16,70 kN/m²</td><td>Einfahrt Service-Annahme, SLW30</td></tr>
+        <tr><td>Bodenplatten UG</td><td class="num">2,00 kN/m²</td><td class="num">7,50 kN/m²</td><td>Technikflächen</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3>Sonderlasten</h3>
+    <div class="kv"><span class="k">Trafo — Gesamtlast</span><span class="v">349,80 kN</span></div>
+    <div class="kv"><span class="k">Trafo — Flächenlast</span><span class="v">28,81 kN/m²</span></div>
+    <div class="kv"><span class="k">Trafo — Verkehrslast</span><span class="v">5,00 kN/m²</span></div>
+    <div class="kv"><span class="k">Fassade (pauschal)</span><span class="v">4,00 kN/m</span></div>
+    <div class="kv"><span class="k">Treppen — Belag gk</span><span class="v">1,50 kN/m²</span></div>
+    <div class="kv"><span class="k">Treppen — Nutzlast (Kat. T2)</span><span class="v">5,00 kN/m²</span></div>
+    <div class="kv"><span class="k">Geländer, Horizontallast</span><span class="v">1,00 kN/m</span></div>
+  </div>
+  <div class="card">
+    <h3>Schnee &amp; Wind</h3>
+    <div class="kv"><span class="k">Schneelast sk (München)</span><span class="v">1,15 kN/m²</span></div>
+    <div class="kv"><span class="k">Windzone Gebäude</span><span class="v">WZ II · vb,0=25,0 m/s</span></div>
+    <div class="kv"><span class="k">Windzone Flachdach/Attika</span><span class="v">WZ III · vb,0=27,5 m/s</span></div>
+    <div class="kv"><span class="k">Resultierender Winddruck quer</span><span class="v">0,86 kN/m²</span></div>
+    <div class="kv"><span class="k">Resultierender Winddruck längs</span><span class="v">0,80 kN/m²</span></div>
+    <div class="note" style="margin-top:10px;">Windlasten werden programmintern in FriLo GEO über alle Geschosse generiert und sind in den Max/Min-Überlagerungen enthalten.</div>
+  </div>
+</div>
+
+<div class="note">
+Für die Fundamentbemessung wird die nach Geschosszahl mögliche Abminderung der Nutzlasten <b>bewusst nicht angesetzt</b> — es sollen Tragreserven für spätere Umnutzung/Umplanung vorgehalten werden.
+</div>
+`;
+
+// ============================================================
+// VIEW: BRANDSCHUTZ
+// ============================================================
+document.getElementById('view-brandschutz').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Kapitel C · Nachweis Feuerwiderstandsdauer</div>
+  <h2>R90 — Mindestmaße &amp; Betondeckung</h2>
+  <p>Gebäudeklasse 5 wegen möglicher optionaler Aufstockung → statt gestaffelter F60/F90 (nach GK4) wird <b>durchgehend R90 in allen Geschossen</b> ausgeführt, um spätere Ertüchtigung zu vermeiden. Nachweise nach DIN EN 1992-1-2:2010-12.</p>
+</div>
+
+<div class="note crit">
+<b>Wichtig für die Bauausführung:</b> Die untenstehenden Mindestmaße und Achsabstände sind bindend — bei Abweichungen (z.B. geringere Betondeckung, falsche Stabdurchmesser) ist der Brandschutznachweis nicht mehr gültig. Im Zweifel immer die Bewehrungspläne der jeweiligen Position gegenprüfen.
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Bauteil</th><th>Mindestdicke/-breite</th><th>Vorh. Wert</th><th>cnom / Achsabstand</th><th>Ø min.</th></tr></thead>
+    <tbody>
+      <tr><td>Stb.-Decken (alle)</td><td class="num">hs,erf = 200 mm</td><td class="num">vorh. 240 mm</td><td class="num">cv=25mm (XC1), a=29mm</td><td class="num">Ø8</td></tr>
+      <tr><td>Treppenzwischenpodeste</td><td class="num">hs,erf = 100 mm</td><td class="num">vorh. 200 mm</td><td class="num">cv=25mm, a=35mm</td><td class="num">Ø8 Bü / Ø10</td></tr>
+      <tr><td>Stb.-Wände (tragend, mehrseitig)</td><td class="num">herf = 170 mm</td><td class="num">vorh. 200 mm</td><td class="num">cv=25mm, a=29mm</td><td class="num">Ø8</td></tr>
+      <tr><td>Unterzüge — Brüstungen bmin=150</td><td class="num">bmin=150mm, bw=100mm</td><td class="num">vorh. 250 mm</td><td class="num">cv=30mm, asd=45mm</td><td class="num">Bü.Ø8 / Längs Ø14</td></tr>
+      <tr><td>Unterzüge — bmin=250/200</td><td class="num">bmin=250/200mm</td><td class="num">vorh. 200 mm</td><td class="num">cv=30mm, asd=45mm</td><td class="num">Bü.Ø8 / Längs Ø14</td></tr>
+      <tr><td>Treppenläufe (1-achsig)</td><td class="num">hs,erf = 100 mm</td><td class="num">vorh. 200 mm</td><td class="num">cv=25mm, a=37mm</td><td class="num">Ø8</td></tr>
+      <tr><td>Konsolen — abgesetztes Treppenauflager</td><td class="num">herf = 80 mm</td><td class="num">vorh. 145 mm</td><td class="num">cv=25mm, a=29mm (o/v/u)</td><td class="num">Ø8</td></tr>
+      <tr><td>Konsolen — Linienkonsolen</td><td class="num">herf = 80 mm</td><td class="num">vorh. 160 mm</td><td class="num">cv=25mm, a=29mm</td><td class="num">Ø8</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="grid2" style="margin-top:14px;">
+  <div class="card">
+    <h3>Stb.-Stützen R90</h3>
+    <p>Für Stützen ist keine pauschale Tabelle anwendbar — der Ausnutzungsfaktor wird für jede Position einzeln im Anschluss an die Kaltbemessung ermittelt (Brandschutzbemessung je Pos. in Kap. I).</p>
+  </div>
+  <div class="card">
+    <h3>Fugendicken Konsolen</h3>
+    <div class="kv"><span class="k">Fugendicke oben</span><span class="v">10 mm ≤ 30 mm</span></div>
+    <div class="kv"><span class="k">Fugendicke unten</span><span class="v">10 mm ≤ 30 mm</span></div>
+    <div class="kv"><span class="k">Beanspruchung</span><span class="v" style="font-family:var(--sans);">einseitig (Tab. 5.2, Z. 2.3)</span></div>
+  </div>
+</div>
+`;
+
+// ============================================================
+// VIEW: GRÜNDUNG
+// ============================================================
+document.getElementById('view-gruendung').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Kapitel A.6 &amp; Kapitel J</div>
+  <h2>Baugrund &amp; Gründung</h2>
+  <p>Baugrundgutachten GHB Consult GmbH (01.07.2025) sowie Dorch Gruppe DC Wasser und Umwelt (19.05.2006). Typisch günstige Münchner Baugrundverhältnisse mit tragfähigen quartären Kiesen.</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3>Wasserstände</h3>
+    <div class="kv"><span class="k">HHW 1940 (Bemessung)</span><span class="v">501,1 m ü.NN</span></div>
+    <div class="kv"><span class="k">→ inkl. Sicherheitszuschlag</span><span class="v">+50 cm</span></div>
+    <div class="kv"><span class="k">Gründungssohle</span><span class="v">501,90 / 502,20 m ü.NN</span></div>
+    <div class="kv"><span class="k">MGHW (Bauzustand)</span><span class="v">499,3 m ü.NN</span></div>
+    <div class="kv"><span class="k">Abstand MGHW–Sohle</span><span class="v">~2,60 m</span></div>
+    <div class="note" style="margin-top:10px;">Da MGHW ca. 2,60 m unter Gründungssohle liegt, kann auf den Auftriebssicherheitsnachweis für den Bauzustand verzichtet werden.</div>
+  </div>
+  <div class="card">
+    <h3>Bodenkennwerte</h3>
+    <div class="kv"><span class="k">Gründungstiefe (dicht gelagerte Kiese)</span><span class="v">ab 1,0 m</span></div>
+    <div class="kv"><span class="k">max. Sohlwiderstand σR,d (Spitze)</span><span class="v">300 kN/m²</span></div>
+    <div class="kv"><span class="k">Bettungsmodul ks (Flachgründung)</span><span class="v">50 MN/m³</span></div>
+    <div class="kv"><span class="k">Rechnerische Setzungen</span><span class="v">0,5 – 1,5 cm</span></div>
+    <div class="kv"><span class="k">Setzungsgrenze (Kap. J)</span><span class="v">&lt; 1,5 cm</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Gründungskonzept</h3>
+  <p><b style="color:#fff;">Regelbereiche:</b> Einzel- und Streifenfundamente. <b style="color:#fff;">Aufzugsunterfahrt:</b> tragende Bodenplatte in WU-Konstruktion (wegen anstehendem Grundwasser). Übrige UG-Bereiche mit Pflasterbelag ausführbar.</p>
+  <p><b style="color:#fff;">Grundlegende Festlegungen (Kap. J):</b></p>
+  <ul style="margin:6px 0 0; padding-left:20px; color:var(--text-dim); font-size:13.5px; line-height:1.7;">
+    <li>Vereinfachtes Verfahren für gering belastete Fundamente; Grundbruch-/Setzungsnachweis für höher belastete</li>
+    <li>Grundwasser gemäß Gutachten mit 40% Abminderung berücksichtigt</li>
+    <li>Einbindetiefe nur bis OK Fundament angesetzt (Kiesüberschüttung/Belag nicht grundbruchgünstig)</li>
+    <li>Anpralllasten nicht berücksichtigt</li>
+    <li>Horizontallasten aus Erddruck bei betroffenen Fundamenten (Außenwände UG) berücksichtigt, teils über Zerrbalken mit dahinterliegenden Einzelfundamenten gekoppelt</li>
+    <li>Nutzlastabminderung nach Geschosszahl für Fundamentbemessung <b>bewusst nicht</b> angesetzt (Tragreserven)</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Beispiel Streifenfundament FU-11</h3>
+  <div class="kv"><span class="k">Querschnitt</span><span class="v">b/h = 80/50 cm</span></div>
+  <div class="kv"><span class="k">Beton</span><span class="v">C30/37</span></div>
+  <div class="kv"><span class="k">Exposition oben/unten</span><span class="v">XC3 / XC2, cnom=35mm</span></div>
+  <div class="kv"><span class="k">Bewehrung o/u</span><span class="v">4 Ø12</span></div>
+  <div class="kv"><span class="k">Bewehrung seitlich (Querricht.)</span><span class="v">4 Ø12 zusätzl.</span></div>
+  <div class="kv"><span class="k">Bügel</span><span class="v">Ø10/20</span></div>
+  <div class="kv"><span class="k">Anschlussbew. Wand</span><span class="v">Ø10/15</span></div>
+  <div class="note" style="margin-top:10px;">Vollständige Fundamentliste (FU-01 bis FU-24, Streifen- und Einzelfundamente) siehe Positionsindex, Kapitel J.</div>
+</div>
+
+<div class="note crit">
+Im Zuge der Baugrubenarbeiten sind die Baugrundangaben im Sinne von DIN 1054 <b>vor Ort zu überprüfen</b>. Bei nennenswerten Abweichungen ist eine Neudimensionierung der Gründung erforderlich!
+</div>
+`;
+
+// ============================================================
+// VIEW: NORMEN
+// ============================================================
+document.getElementById('view-normen').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Kapitel A.7</div>
+  <h2>Normen &amp; Regelwerke</h2>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Norm</th><th>Inhalt</th></tr></thead>
+    <tbody>
+      <tr><td class="num">DIN EN 1990</td><td>Grundlagen der Tragwerksplanung</td></tr>
+      <tr><td class="num">DIN EN 1991</td><td>Einwirkungen auf Tragwerke</td></tr>
+      <tr><td class="num">— 1991-1-1</td><td>Eigengewichte und Nutzlasten</td></tr>
+      <tr><td class="num">— 1991-1-3</td><td>Schneelasten</td></tr>
+      <tr><td class="num">— 1991-1-4</td><td>Windlasten</td></tr>
+      <tr><td class="num">DIN EN 1992</td><td>Bemessung und Konstruktion von Stahlbeton- und Spannbetontragwerken</td></tr>
+      <tr><td class="num">DIN EN 1992-1-2</td><td>Brandschutzbemessung (Basis der R90-Nachweise, Kap. C)</td></tr>
+      <tr><td class="num">DIN EN 1993</td><td>Bemessung und Konstruktion von Stahlbauten</td></tr>
+      <tr><td class="num">DIN EN 1995</td><td>Bemessung und Konstruktion von Holzbauten</td></tr>
+      <tr><td class="num">DIN EN 1996</td><td>Bemessung und Konstruktion von Mauerwerksbauten</td></tr>
+      <tr><td class="num">DIN EN 1997</td><td>Entwurf, Berechnung und Bemessung in der Geotechnik</td></tr>
+      <tr><td class="num">DIN 1054</td><td>Baugrund — Sicherheitsnachweise (Baugrubenkontrolle)</td></tr>
+      <tr><td class="num">Heft 240 / 525</td><td>DAfStB-Hefte</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="note">Sowie weitere einschlägige Fachnormen des DIN. Software: FriLo (Friedrich+Lochner), BauText (Veit Christoph GmbH), Halfen HDB Dübelleiste (v13.80), Halfen HSC Stud Connector (v3.1.0).</div>
+`;
+
+// ============================================================
+// VIEW: POSITIONEN (searchable index)
+// ============================================================
+document.getElementById('view-positionen').innerHTML = `
+<div class="section-head">
+  <div class="eyebrow">Vollständiger Positionsindex · 601 Einträge</div>
+  <h2>Positionen &amp; Seitenzahlen</h2>
+  <p>Kompletter Index aus dem Lesezeichenbaum der Original-PDF. Seitenzahl bezieht sich auf die PDF-Gesamtseite (nicht Kapitelseite) — direkt zur Position in der Statik-PDF springen.</p>
+</div>
+<div class="search-bar">
+  <input type="text" id="posSearch" placeholder="Suche z.B. „FU-11“, „Stütze“, „Wandscheibe“, „Durchstanz“…">
+</div>
+<div class="chip-filter" id="chapterFilter" style="margin-bottom:14px;"></div>
+<div class="result-count" id="resultCount"></div>
+<div class="pos-list" id="posList"></div>
+`;
+
+// Build chapter filter chips
+const chapFilterEl = document.getElementById('chapterFilter');
+let activeChapter = 'ALL';
+function buildChapterChips(){
+  const allChip = document.createElement('div');
+  allChip.className = 'chip-btn active';
+  allChip.textContent = 'Alle';
+  allChip.onclick = () => { activeChapter='ALL'; updateChapterChips(); renderPosList(); };
+  chapFilterEl.appendChild(allChip);
+  CHAPTERS.forEach(c=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip-btn';
+    chip.textContent = 'Kap. ' + c.code;
+    chip.title = c.name;
+    chip.onclick = () => { activeChapter=c.code; updateChapterChips(); renderPosList(); };
+    chip.dataset.code = c.code;
+    chapFilterEl.appendChild(chip);
+  });
+}
+function updateChapterChips(){
+  chapFilterEl.querySelectorAll('.chip-btn').forEach(el=>{
+    const isAll = el.textContent === 'Alle';
+    el.classList.toggle('active', isAll ? activeChapter==='ALL' : el.dataset.code===activeChapter);
+  });
+}
+buildChapterChips();
+
+let posListBuilt = false;
+function renderPosList(){
+  const q = document.getElementById('posSearch').value.trim().toLowerCase();
+  const listEl = document.getElementById('posList');
+  const countEl = document.getElementById('resultCount');
+  let items = TOC;
+  if(activeChapter !== 'ALL'){
+    items = items.filter(e => e.chapter === activeChapter);
+  }
+  if(q){
+    items = items.filter(e => e.title.toLowerCase().includes(q));
+  }
+  countEl.textContent = items.length + ' Einträge';
+  if(items.length === 0){
+    listEl.innerHTML = '<div class="pos-row" style="color:var(--text-faint);">Keine Treffer.</div>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  items.slice(0, 800).forEach(e=>{
+    const row = document.createElement('div');
+    row.className = 'pos-row';
+    const isDeep = e.lvl >= 3;
+    row.innerHTML = `
+      <span class="pch">${e.chapter}</span>
+      <span class="ptitle ${isDeep?'deep':''}">${escapeHtml(e.title)}</span>
+      <span class="ppage">S. ${e.page}</span>
+    `;
+    frag.appendChild(row);
+  });
+  listEl.innerHTML = '';
+  listEl.appendChild(frag);
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+document.getElementById('view-positionen').addEventListener('input', (e)=>{
+  if(e.target.id === 'posSearch') renderPosList();
+});
+
+// ---------- init ----------
+showTab('uebersicht');
+
+</script>
+</body>
+</html>
