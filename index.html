@@ -473,7 +473,7 @@ a{color:var(--steel);}
       <span class="status" id="pdfBaseStatus"></span>
     </div>
     <div class="callout" style="margin:0 0 18px;">
-      Die Statik wurde in 14 kapitelweise PDF-Dateien (je &lt;100 MB) aufgeteilt, damit sie zusammen mit dieser App gehostet werden können. Trage oben den Pfad/die URL ein, unter dem die <code>chunks/</code>-Ordner-Dateien liegen (z. B. relativ <code>./chunks/</code>, wenn sie neben der <code>index.html</code> liegen, oder eine Cloud-URL). „Im PDF öffnen" springt dann direkt zur richtigen Seite.
+      Die Statik wurde in 14 kapitelweise PDF-Dateien (je &lt;100 MB) aufgeteilt und liegt als GitHub Release unter <code>SimonRiedelBau/StatikFerrari</code> (Tag <code>statik-v1</code>). Die PDF-Quelle ist bereits voreingestellt – „Im PDF öffnen" springt direkt zur richtigen Seite. Nur falls du die Dateien woanders hostest (z. B. neuer Release-Tag oder eigener Server), trage hier die neue Basis-URL ein und speichere.
     </div>
 
     <div class="filter-bar">
@@ -568,13 +568,13 @@ const searchInput = document.getElementById('search');
 const pdfBaseInput = document.getElementById('pdfBase');
 const pdfBaseStatus = document.getElementById('pdfBaseStatus');
 function getPdfBase(){
-  return localStorage.getItem('statikPdfBase') || './chunks/';
+  return localStorage.getItem('statikPdfBase') || 'https://github.com/SimonRiedelBau/StatikFerrari/releases/download/statik-v1/';
 }
 pdfBaseInput.value = getPdfBase();
 document.getElementById('pdfBaseSave').addEventListener('click', ()=>{
   let v = pdfBaseInput.value.trim();
   if(v && !v.endsWith('/')) v += '/';
-  if(!v) v = './chunks/';
+  if(!v) v = 'https://github.com/SimonRiedelBau/StatikFerrari/releases/download/statik-v1/';
   localStorage.setItem('statikPdfBase', v);
   pdfBaseInput.value = v;
   pdfBaseStatus.textContent = 'gespeichert ✓';
